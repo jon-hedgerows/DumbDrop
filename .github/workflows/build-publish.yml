@@ -43,17 +43,24 @@ jobs:
           images: |
             name=ghcr.io/${{ github.repository }}
           tags: |
+            # always add the dev tag
+            type=raw,value=dev
+            # branch event
+            type=ref,event=branch
+            # add a version tag matching the name of the git tag
+            type=ref,event=tag
+            # output yearmonthday
             type=schedule,pattern={{date 'YYYYMMDD'}}
-            # output 0.1.2
+            # output 1.1.2
             type=semver,pattern={{version}}
-            # output 0.1
+            # output 1.1
             type=semver,pattern={{major}}.{{minor}}
-            # disabled if major zero
+            # output 1, disabled if major zero
             type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
-            # minimal (short sha)
-            type=sha
+            # full length sha
+            type=sha,format=long
           labels: |
-            org.opencontainers.image.description="dumbdrop from dumware.io"
+            org.opencontainers.image.description=dumb file dropper from dumware.io
 
       - name: Build and push Docker image
         id: push
