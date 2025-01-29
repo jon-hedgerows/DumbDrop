@@ -11,6 +11,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 const uploadDir = './uploads';  // Local development
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '1024') * 1024 * 1024; // Convert MB to bytes
+// create datetime subdirs for each upload?
+const subDirs = (parseInt(process.env.SUBDIRS || '0') == 1)
 
 // Brute force protection setup
 const loginAttempts = new Map();  // Stores IP addresses and their attempt counts
@@ -26,7 +28,7 @@ function resetAttempts(ip) {
 function isLockedOut(ip) {
     const attempts = loginAttempts.get(ip);
     if (!attempts) return false;
-    
+
     if (attempts.count >= MAX_ATTEMPTS) {
         const timeElapsed = Date.now() - attempts.lastAttempt;
         if (timeElapsed < LOCKOUT_TIME) {
@@ -111,10 +113,10 @@ function safeCompare(a, b) {
     if (typeof a !== 'string' || typeof b !== 'string') {
         return false;
     }
-    
+
     // Use Node's built-in constant-time comparison
     return crypto.timingSafeEqual(
-        Buffer.from(a.padEnd(32)), 
+        Buffer.from(a.padEnd(32)),
         Buffer.from(b.padEnd(32))
     );
 }
@@ -123,7 +125,7 @@ function safeCompare(a, b) {
 app.post('/api/verify-pin', (req, res) => {
     const { pin } = req.body;
     const ip = req.ip;
-    
+
     // If no PIN is set in env, always return success
     if (!PIN) {
         return res.json({ success: true });
@@ -133,7 +135,7 @@ app.post('/api/verify-pin', (req, res) => {
     if (isLockedOut(ip)) {
         const attempts = loginAttempts.get(ip);
         const timeLeft = Math.ceil((LOCKOUT_TIME - (Date.now() - attempts.lastAttempt)) / 1000 / 60);
-        return res.status(429).json({ 
+        return res.status(429).json({
             error: `Too many attempts. Please try again in ${timeLeft} minutes.`
         });
     }
@@ -142,7 +144,7 @@ app.post('/api/verify-pin', (req, res) => {
     if (safeCompare(pin, PIN)) {
         // Reset attempts on successful login
         resetAttempts(ip);
-        
+
         // Set secure cookie
         res.cookie('DUMBDROP_PIN', pin, {
             httpOnly: true,
@@ -155,11 +157,11 @@ app.post('/api/verify-pin', (req, res) => {
         // Record failed attempt
         const attempts = recordAttempt(ip);
         const attemptsLeft = MAX_ATTEMPTS - attempts.count;
-        
-        res.status(401).json({ 
-            success: false, 
-            error: attemptsLeft > 0 ? 
-                `Invalid PIN. ${attemptsLeft} attempts remaining.` : 
+
+        res.status(401).json({
+            success: false,
+            error: attemptsLeft > 0 ?
+                `Invalid PIN. ${attemptsLeft} attempts remaining.` :
                 'Too many attempts. Account locked for 15 minutes.'
         });
     }
@@ -167,7 +169,7 @@ app.post('/api/verify-pin', (req, res) => {
 
 // Check if PIN is required
 app.get('/api/pin-required', (req, res) => {
-    res.json({ 
+    res.json({
         required: !!PIN,
         length: PIN ? PIN.length : 0
     });
@@ -229,11 +231,11 @@ const uploads = new Map();
 // Routes
 app.post('/upload/init', async (req, res) => {
     const { filename, fileSize } = req.body;
-    
+
     // Check file size limit
     if (fileSize > maxFileSize) {
         log.error(`File size ${fileSize} bytes exceeds limit of ${maxFileSize} bytes`);
-        return res.status(413).json({ 
+        return res.status(413).json({
             error: 'File too large',
             limit: maxFileSize,
             limitInMB: maxFileSize / (1024 * 1024)
@@ -241,11 +243,17 @@ app.post('/upload/init', async (req, res) => {
     }
 
     const uploadId = Date.now().toString();
-    const filePath = path.join(uploadDir, filename);
-    
+    // if SUBDIRS=1 then upload files into {uploadDir}/{datetime}/{filename}
+    var filePath;
+    if (subDirs) {
+        filePath = path.join(uploadDir, Date.now().toISOString(), filename);
+    } else {
+        filePath = path.join(uploadDir, filename);
+    }
+
     try {
         await ensureDirectoryExists(filePath);
-        
+
         uploads.set(uploadId, {
             filename,
             filePath,
@@ -262,9 +270,9 @@ app.post('/upload/init', async (req, res) => {
     }
 });
 
-app.post('/upload/chunk/:uploadId', express.raw({ 
-    limit: '10mb', 
-    type: 'application/octet-stream' 
+app.post('/upload/chunk/:uploadId', express.raw({
+    limit: '10mb',
+    type: 'application/octet-stream'
 }), (req, res) => {
     const { uploadId } = req.params;
     const upload = uploads.get(uploadId);
@@ -281,7 +289,7 @@ app.post('/upload/chunk/:uploadId', express.raw({
         const progress = Math.round((upload.bytesReceived / upload.fileSize) * 100);
         log.info(`Received chunk for ${upload.filename}: ${progress}%`);
 
-        res.json({ 
+        res.json({
             bytesReceived: upload.bytesReceived,
             progress
         });
@@ -324,7 +332,7 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
     log.info(`Server running at http://localhost:${port}`);
     log.info(`Upload directory: ${uploadDir}`);
-    
+
     // List directory contents
     try {
         const files = fs.readdirSync(uploadDir);

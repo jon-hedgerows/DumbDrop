@@ -4,7 +4,6 @@ A stupid simple file upload application that provides a clean, modern interface 
 
 ![image](https://github.com/user-attachments/assets/2e39d8ef-b250-4689-9553-a580f11c06a7)
 
-
 No auth (unless you want it now!), no storage, no nothing. Just a simple file uploader to drop dumb files into a dumb folder.
 
 ## Features
@@ -21,11 +20,12 @@ No auth (unless you want it now!), no storage, no nothing. Just a simple file up
 
 ## Environment Variables
 
-| Variable      | Description                           | Default | Required |
-|--------------|---------------------------------------|---------|----------|
-| PORT         | Server port                           | 3000    | No       |
-| MAX_FILE_SIZE| Maximum file size in MB               | 1024    | No       |
-| DUMBDROP_PIN | PIN protection (4-10 digits)          | None    | No       |
+| Variable      | Description                                             | Default | Required |
+| ------------- | ------------------------------------------------------- | ------- | -------- |
+| PORT          | Server port                                             | 3000    | No       |
+| MAX_FILE_SIZE | Maximum file size in MB                                 | 1024    | No       |
+| DUMBDROP_PIN  | PIN protection (4-10 digits)                            | None    | No       |
+| SUBDIRS       | Upload files into sub dirs using datetime (0=no, 1=yes) | 0       | No       |
 
 ## Security Features
 
@@ -36,27 +36,31 @@ No auth (unless you want it now!), no storage, no nothing. Just a simple file up
 - No PIN storage in browser (memory only)
 
 # Future Features
+
 - Camera Upload for Mobile
 - Enhanced Progress Features (upload speed display, time remaining estimation)
-
 
 ## Quick Start
 
 ### Running Locally
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Set environment variables in `.env`:
+
 ```env
-PORT=3000                  # Port to run the server on
+PORT=3000                 # Port to run the server on
 MAX_FILE_SIZE=1024        # Maximum file size in MB (default: 1024 MB / 1 GB)
 DUMBDROP_PIN=123456       # Optional PIN protection (4-10 digits, leave empty to disable)
+SUBDIRS=0                 # 1 = Use unique datetime based subdirs
 ```
 
 3. Start the server:
+
 ```bash
 npm start
 ```
@@ -64,6 +68,7 @@ npm start
 ### Running with Docker
 
 #### Pull from Docker Hub
+
 ```bash
 # Pull the image
 docker pull abite3/dumbdrop:latest
@@ -77,26 +82,30 @@ docker run -p 3000:3000 -v "${PWD}\local_uploads:/app/uploads" -e DUMBDROP_PIN=1
 ```
 
 # Docker Compose
+
 ```yml
 name: Dumb Drop
 services:
-    dumbdrop:
-        ports:
-            - 3000:3000
-        volumes:
-            - $(pwd)/local_uploads:/app/uploads
-        environment:
-            - DUMBDROP_PIN=123456
-        image: abite3/dumbdrop:latest
+  dumbdrop:
+    ports:
+      - 3000:3000
+    volumes:
+      - $(pwd)/local_uploads:/app/uploads
+    environment:
+      - DUMBDROP_PIN=123456
+    image: abite3/dumbdrop:latest
 ```
 
 #### Build Locally
+
 1. Build the Docker image:
+
 ```bash
 docker build -t dumbdrop .
 ```
 
 2. Run the container:
+
 ```bash
 # For Linux/Mac:
 docker run -p 3000:3000 -v $(pwd)/local_uploads:/app/uploads -e DUMBDROP_PIN=123456 dumbdrop
