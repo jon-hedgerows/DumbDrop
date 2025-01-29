@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - jon-updates
+    # Trigger the action when a tag is pushed (to any branch)
+    tags:
+      - "**"
 
 jobs:
   build-and-push:
