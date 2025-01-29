@@ -10,7 +10,7 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 const uploadDir = './uploads';  // Local development
-const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '1024') * 1024 * 1024; // Convert MB to bytes
+const maxFileSize = (parseInt(process.env.MAX_FILE_SIZE) || '1024') * 1024 * 1024; // Convert MB to bytes
 // create datetime subdirs for each upload?
 const subDirs = (parseInt(process.env.SUBDIRS) == 1) || (new String(process.env.SUBDIRS).toLowerCase == 'true');
 
