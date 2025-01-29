@@ -148,7 +148,7 @@ app.post('/api/verify-pin', (req, res) => {
         // Set secure cookie
         res.cookie('DUMBDROP_PIN', pin, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: !(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'),
             sameSite: 'strict',
             path: '/'
         });
