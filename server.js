@@ -131,6 +131,14 @@ app.post('/api/verify-pin', (req, res) => {
 
     // If no PIN is set in env, always return success
     if (!PIN) {
+        // Set secure cookie
+        res.cookie('DUMBDROP_PIN', '', {
+            maxAge: LOGIN_TIME_MS,
+            httpOnly: true,
+            secure: !(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'),
+            sameSite: 'strict',
+            path: '/'
+        });
         return res.json({ success: true });
     }
 
@@ -166,8 +174,11 @@ app.post('/api/verify-pin', (req, res) => {
             success: false,
             error: attemptsLeft > 0 ?
                 `Invalid PIN. ${attemptsLeft} attempts remaining.` :
-                'Too many attempts. Account locked for 15 minutes.'
+                `Too many attempts. Account locked for ${Math.ceil(LOCKOUT_TIME / 1000 / 60)} minutes.`
         });
+        log.info(attemptsLeft > 0 ?
+            `Invalid PIN from ${ip}. ${attemptsLeft} attempts remaining.` :
+            `Too many attempts from ${ip}. IP locked for ${Math.ceil(LOCKOUT_TIME / 1000 / 60)} minutes.`);
     }
 });
 
