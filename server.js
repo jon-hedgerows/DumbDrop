@@ -246,7 +246,7 @@ app.post('/upload/init', async (req, res) => {
     // if SUBDIRS=1 then upload files into {uploadDir}/{datetime}/{filename}
     var filePath;
     if (subDirs) {
-        filePath = path.join(uploadDir, Date.now().toISOString(), filename);
+        filePath = path.join(uploadDir, (new Date()).toISOString().replaceAll(":", "-"), filename);
     } else {
         filePath = path.join(uploadDir, filename);
     }
