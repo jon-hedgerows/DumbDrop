@@ -12,7 +12,10 @@ const port = process.env.PORT || 3000;
 const uploadDir = './uploads';  // Local development
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '1024') * 1024 * 1024; // Convert MB to bytes
 // create datetime subdirs for each upload?
-const subDirs = (parseInt(process.env.SUBDIRS || '0') == 1)
+const subDirs = (parseInt(process.env.SUBDIRS) == 1) || (new String(process.env.SUBDIRS).toLowerCase == 'true');
+
+// How long before the PIN should be requested again?
+const LOGIN_TIME_MS = (parseInt(process.env.LOGIN_TIME) || '10') * 60 * 1000;
 
 // Brute force protection setup
 const loginAttempts = new Map();  // Stores IP addresses and their attempt counts
@@ -147,6 +150,7 @@ app.post('/api/verify-pin', (req, res) => {
 
         // Set secure cookie
         res.cookie('DUMBDROP_PIN', pin, {
+            maxAge: LOGIN_TIME_MS,
             httpOnly: true,
             secure: !(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'),
             sameSite: 'strict',

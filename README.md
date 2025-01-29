@@ -26,6 +26,7 @@ No auth (unless you want it now!), no storage, no nothing. Just a simple file up
 | MAX_FILE_SIZE | Maximum file size in MB                                 | 1024    | No       |
 | DUMBDROP_PIN  | PIN protection (4-10 digits)                            | None    | No       |
 | SUBDIRS       | Upload files into sub dirs using datetime (0=no, 1=yes) | 0       | No       |
+| LOGIN_TIME    | How long before the PIN is requested again, minutes     | 10      | No       |
 
 ## Security Features
 
@@ -57,6 +58,7 @@ PORT=3000                 # Port to run the server on
 MAX_FILE_SIZE=1024        # Maximum file size in MB (default: 1024 MB / 1 GB)
 DUMBDROP_PIN=123456       # Optional PIN protection (4-10 digits, leave empty to disable)
 SUBDIRS=0                 # 1 = Use unique datetime based subdirs
+LOGIN_TIME=10             # number of minutes to stay logged in - dumbdrop will ask for the pin again after this time
 ```
 
 3. Start the server:
