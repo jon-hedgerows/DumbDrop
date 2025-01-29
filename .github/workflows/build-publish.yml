@@ -46,12 +46,10 @@ jobs:
           images: |
             name=ghcr.io/${{ github.repository }}
           tags: |
-            # always add the dev tag
-            type=raw,value=dev
-            # branch event
-            type=ref,event=branch
-            # add a version tag matching the name of the git tag
-            type=ref,event=tag
+            # add the dev tag, except for tags
+            type=raw,value=dev,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
+            # add a version tag matching the name of the git tag, except version tags
+            type=ref,event=tag,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
             # output yearmonthday
             type=schedule,pattern={{date 'YYYYMMDD'}}
             # output 1.1.2
