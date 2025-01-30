@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,31 +9,34 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
+
 <body>
     <div class="container">
         <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-            <svg xmlns="http://www.w3.org/2000/svg" class="theme-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="theme-toggle-icon" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <!-- Moon icon (shown in light mode) -->
-                <path class="moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                <path class="moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 <!-- Sun icon (shown in dark mode) -->
-                <circle class="sun" cx="12" cy="12" r="5" style="display:none"/>
-                <line class="sun" x1="12" y1="1" x2="12" y2="3" style="display:none"/>
-                <line class="sun" x1="12" y1="21" x2="12" y2="23" style="display:none"/>
-                <line class="sun" x1="4.22" y1="4.22" x2="5.64" y2="5.64" style="display:none"/>
-                <line class="sun" x1="18.36" y1="18.36" x2="19.78" y2="19.78" style="display:none"/>
-                <line class="sun" x1="1" y1="12" x2="3" y2="12" style="display:none"/>
-                <line class="sun" x1="21" y1="12" x2="23" y2="12" style="display:none"/>
-                <line class="sun" x1="4.22" y1="19.78" x2="5.64" y2="18.36" style="display:none"/>
-                <line class="sun" x1="18.36" y1="5.64" x2="19.78" y2="4.22" style="display:none"/>
+                <circle class="sun" cx="12" cy="12" r="5" style="display:none" />
+                <line class="sun" x1="12" y1="1" x2="12" y2="3" style="display:none" />
+                <line class="sun" x1="12" y1="21" x2="12" y2="23" style="display:none" />
+                <line class="sun" x1="4.22" y1="4.22" x2="5.64" y2="5.64" style="display:none" />
+                <line class="sun" x1="18.36" y1="18.36" x2="19.78" y2="19.78" style="display:none" />
+                <line class="sun" x1="1" y1="12" x2="3" y2="12" style="display:none" />
+                <line class="sun" x1="21" y1="12" x2="23" y2="12" style="display:none" />
+                <line class="sun" x1="4.22" y1="19.78" x2="5.64" y2="18.36" style="display:none" />
+                <line class="sun" x1="18.36" y1="5.64" x2="19.78" y2="4.22" style="display:none" />
             </svg>
         </button>
         <h1>DumbDrop</h1>
         <div class="upload-container" id="dropZone">
             <div class="upload-content">
-                <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 <p>Drag and drop files or folders here<br>or</p>
                 <input type="file" id="fileInput" multiple hidden>
@@ -46,6 +50,7 @@
         <div id="uploadProgress"></div>
         <div id="fileList" class="file-list"></div>
         <button id="uploadButton" class="upload-button" style="display: none;">Upload Files</button>
+        <button id="logoutButton" class="logout-button" style="display: none;">Logout</button>
     </div>
 
     <style>
@@ -82,8 +87,8 @@
             }
 
             async initUpload() {
-                const uploadPath = this.file.relativePath ? 
-                    `${this.file.relativePath}${this.file.name}` : 
+                const uploadPath = this.file.relativePath ?
+                    `${this.file.relativePath}${this.file.name}` :
                     this.file.name;
 
                 const response = await fetch('/upload/init', {
@@ -148,17 +153,17 @@
             createProgressElement() {
                 const container = document.createElement('div');
                 container.className = 'progress-container';
-                
+
                 const label = document.createElement('div');
                 label.className = 'progress-label';
-                const displayPath = this.file.relativePath ? 
-                    `📁 ${this.file.relativePath.split('/')[0]}/` : 
+                const displayPath = this.file.relativePath ?
+                    `📁 ${this.file.relativePath.split('/')[0]}/` :
                     `📄 ${this.file.name}`;
                 label.textContent = displayPath;
 
                 const progress = document.createElement('div');
                 progress.className = 'progress';
-                
+
                 const bar = document.createElement('div');
                 bar.className = 'progress-bar';
                 bar.style.width = '0%';
@@ -166,7 +171,7 @@
                 progress.appendChild(bar);
                 container.appendChild(label);
                 container.appendChild(progress);
-                
+
                 document.getElementById('uploadProgress').appendChild(container);
                 this.progressElement = { container, bar };
             }
@@ -194,11 +199,11 @@
         // Helper function to group files by folder
         function groupFilesByFolder(fileList) {
             const groups = new Map();
-            
+
             fileList.forEach(file => {
                 const path = file.webkitRelativePath || file.relativePath + file.name;
                 const parts = path.split('/');
-                
+
                 if (parts.length > 1) {
                     // This is a file in a folder
                     const folderName = parts[0];
@@ -223,14 +228,14 @@
                     });
                 }
             });
-            
+
             return Array.from(groups.values());
         }
 
         // Helper function to process directory entries
         async function getAllFileEntries(dataTransferItems) {
             let fileEntries = [];
-            
+
             async function traverseEntry(entry, path = '') {
                 if (entry.isFile) {
                     const file = await new Promise((resolve) => entry.file(resolve));
@@ -241,7 +246,7 @@
                     const entries = await new Promise((resolve) => {
                         reader.readEntries(resolve);
                     });
-                    
+
                     for (const childEntry of entries) {
                         await traverseEntry(childEntry, path + entry.name + '/');
                     }
@@ -324,20 +329,20 @@
         function updateFileList() {
             fileList.innerHTML = '';
             const groupedItems = groupFilesByFolder(files);
-            
+
             groupedItems.forEach(item => {
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
-                
+
                 if (item.isFolder) {
                     fileItem.innerHTML = `📁 ${item.name}/ (${formatFileSize(item.totalSize)} - ${item.files.length} files)`;
                 } else {
                     fileItem.innerHTML = `📄 ${item.name} (${formatFileSize(item.totalSize)})`;
                 }
-                
+
                 fileList.appendChild(fileItem);
             });
-            
+
             uploadButton.style.display = files.length > 0 ? 'block' : 'none';
         }
 
@@ -352,7 +357,7 @@
         async function startUploads() {
             uploadButton.disabled = true;
             document.getElementById('uploadProgress').innerHTML = '';
-            
+
             const groupedItems = groupFilesByFolder(files);
             const results = await Promise.all(
                 groupedItems.map(async item => {
@@ -368,7 +373,7 @@
             );
 
             const successful = results.filter(r => r).length;
-            
+
             Toastify({
                 text: `Uploaded ${successful} of ${groupedItems.length} items`,
                 duration: 3000,
@@ -388,11 +393,11 @@
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            
+
             // Update icon
             const moonPaths = document.querySelectorAll('.moon');
             const sunPaths = document.querySelectorAll('.sun');
-            
+
             if (theme === 'dark') {
                 moonPaths.forEach(path => path.style.display = 'none');
                 sunPaths.forEach(path => path.style.display = '');
@@ -409,9 +414,10 @@
         }
 
         // Initialize theme
-        const savedTheme = localStorage.getItem('theme') || 
+        const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         setTheme(savedTheme);
     </script>
 </body>
+
 </html>

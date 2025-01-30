@@ -13,6 +13,7 @@ const uploadDir = './uploads';  // Local development
 const maxFileSize = (parseInt(process.env.MAX_FILE_SIZE) || '1024') * 1024 * 1024; // Convert MB to bytes
 // create datetime subdirs for each upload?
 const subDirs = (parseInt(process.env.SUBDIRS) == 1) || (new String(process.env.SUBDIRS).toLowerCase == 'true');
+const DEBUG = (parseInt(process.env.DEBUG) == 1) || (new String(process.env.DEBUG).toLowerCase == 'true');
 
 // How long before the PIN should be requested again?
 const LOGIN_TIME_MS = (parseInt(process.env.LOGIN_TIME) || '10') * 60 * 1000;
@@ -71,9 +72,10 @@ const PIN = validatePin(process.env.DUMBDROP_PIN);
 
 // Logging helper
 const log = {
-    info: (msg) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`),
-    error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`),
-    success: (msg) => console.log(`[SUCCESS] ${new Date().toISOString()} - ${msg}`)
+    info: (msg) => console.log(`[INFO   ] ${new Date().toISOString()} - ${msg}`),
+    error: (msg) => console.error(`[ERROR  ] ${new Date().toISOString()} - ${msg}`),
+    success: (msg) => console.log(`[SUCCESS] ${new Date().toISOString()} - ${msg}`),
+    debug: (msg) => DEBUG ? console.log(`[DEBUG  ] ${new Date().toISOString()} - ${msg}`) : true
 };
 
 // Helper function to ensure directory exists
@@ -131,14 +133,6 @@ app.post('/api/verify-pin', (req, res) => {
 
     // If no PIN is set in env, always return success
     if (!PIN) {
-        // Set secure cookie
-        res.cookie('DUMBDROP_PIN', '', {
-            maxAge: LOGIN_TIME_MS,
-            httpOnly: true,
-            secure: !(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'),
-            sameSite: 'strict',
-            path: '/'
-        });
         return res.json({ success: true });
     }
 
@@ -234,11 +228,33 @@ app.use(express.static('public'));
 
 // Handle root route
 app.get('/', (req, res) => {
+    log.debug(`PIN=${PIN}, cookiepin=${req.cookies.DUMBDROP_PIN}`);
     if (PIN && !safeCompare(req.cookies.DUMBDROP_PIN, PIN)) {
         return res.redirect('/login.html');
     }
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+    // Set a session datetime cookie for keeping the subdir consistent
+    if (subDirs) {
+        datetime = Date.now().toString()
+        cookieDatetime = parseInt(req.cookies.DUMBDROP_DATETIME) || 0;
+        if (cookieDatetime < (datetime - LOGIN_TIME_MS) || cookieDatetime >= datetime) {
+            // set a new datetime cookie, current one isn't valid
+            res.cookie('DUMBDROP_DATETIME', datetime, {
+                maxAge: LOGIN_TIME_MS,
+                httpOnly: true,
+                secure: !(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'),
+                sameSite: 'strict',
+                path: '/'
+            });
+        }
+    }
+    res.sendFile(path.join(__dirname, 'private', 'index.html'));
 });
+
+// handle /index.html
+app.get('/index.html', (req, res) => {
+    return res.redirect('/');
+})
 
 // Store ongoing uploads
 const uploads = new Map();
@@ -258,14 +274,28 @@ app.post('/upload/init', async (req, res) => {
     }
 
     const uploadId = Date.now().toString();
+
     // if SUBDIRS=1 then upload files into {uploadDir}/{datetime}/{filename}
     var filePath;
     if (subDirs) {
-        filePath = path.join(uploadDir, (new Date()).toISOString().replaceAll(":", "-"), filename);
+        // get the datetime from cookie DUMPDROP_DATETIME, if we can and if it makes sense
+        var subdir = "";
+        datetime = Date.now();
+        cookieDatetime = parseInt(req.cookies.DUMBDROP_DATETIME) || 0;
+        if (cookieDatetime >= (datetime - LOGIN_TIME_MS) && cookieDatetime <= datetime) {
+            log.debug(`DATETIME=${cookieDatetime}`);
+            subdir = (new Date(cookieDatetime)).toISOString().replaceAll(":", "-");
+        } else {
+            log.debug(`DATETIME cookie is not credible`);
+            subdir = (new Date(datetime)).toISOString().replaceAll(":", "-");
+        }
+        log.debug(`subdir=${subdir}`);
+
+        filePath = path.join(uploadDir, subdir, filename);
     } else {
         filePath = path.join(uploadDir, filename);
     }
-
+    log.debug(`filePath=${filePath}`);
     try {
         await ensureDirectoryExists(filePath);
 
