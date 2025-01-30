@@ -12,7 +12,7 @@ jobs:
     steps:
       # Step 1: Check out the repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Step 2: Log in to Docker Hub
       - name: Log in to Docker Hub
@@ -21,12 +21,42 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Build the Docker image
-      - name: Build Docker Image
-        run: |
-          docker build -t dumbwareio/dumbdrop:latest .
+      # Step 3: Setup QEMU to enable multiarch builds
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      # Step 4: Push the Docker image to Docker Hub
-      - name: Push Docker Image
-        run: |
-          docker push dumbwareio/dumbdrop:latest 
+      # Step 4: Set up docker buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 5: Extract metadata and set versions
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # image name relies on both the github owner and docker hub owner being the same
+          images: |
+            name=${{ github.repository }}
+          tags: |
+            # the semantic versioning tags add "latest" when a version tag is present
+            # but since version tags aren't being used (yet?) let's add "latest" anyway
+            type=raw,value=latest
+            # output 1.1.2
+            type=semver,pattern={{version}}
+            # output 1.1
+            type=semver,pattern={{major}}.{{minor}}
+            # output 1, disabled if major zero
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            # full length sha
+            type=sha,format=long
+
+      # Step 6: build and push the image for multiple archs
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
