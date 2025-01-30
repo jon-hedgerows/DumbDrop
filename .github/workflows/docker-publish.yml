@@ -10,11 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 0: Get the repo name without the owner name
-      - name: Get repo name
-        run: |
-          echo "REPONAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
-
       # Step 1: Check out the repository
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,7 +36,7 @@ jobs:
         with:
           # image name relies on both the github owner and docker hub owner being the same
           images: |
-            name=${{ secrets.DOCKER_USERNAME }}/$REPONAME
+            name=${{ secrets.DOCKER_USERNAME }}/dumbdrop
           tags: |
             # the semantic versioning tags add "latest" when a version tag is present
             # but since version tags aren't being used (yet?) let's add "latest" anyway
