@@ -36,7 +36,7 @@ jobs:
         with:
           # image name relies on both the github owner and docker hub owner being the same
           images: |
-            name=${{ github.repository }}
+            name=${{ secrets.DOCKER_USERNAME }}/dumbdrop
           tags: |
             # the semantic versioning tags add "latest" when a version tag is present
             # but since version tags aren't being used (yet?) let's add "latest" anyway
