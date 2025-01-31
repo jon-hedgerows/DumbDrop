@@ -5,12 +5,17 @@ const cors = require('cors');
 const fs = require('fs');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 const uploadDir = './uploads';  // Local development
 const maxFileSize = (parseInt(process.env.MAX_FILE_SIZE) || '1024') * 1024 * 1024; // Convert MB to bytes
+const APPRISE_URL = process.env.APPRISE_URL;
+const APPRISE_MESSAGE = process.env.APPRISE_MESSAGE || 'File uploaded: {filename}';
 // create datetime subdirs for each upload?
 const subDirs = (parseInt(process.env.SUBDIRS) == 1) || (new String(process.env.SUBDIRS).toLowerCase == 'true');
 const DEBUG = (parseInt(process.env.DEBUG) == 1) || (new String(process.env.DEBUG).toLowerCase == 'true');
@@ -263,6 +268,8 @@ const uploads = new Map();
 app.post('/upload/init', async (req, res) => {
     const { filename, fileSize } = req.body;
 
+    var safeFilename = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, '')
+
     // Check file size limit
     if (fileSize > maxFileSize) {
         log.error(`File size ${fileSize} bytes exceeds limit of ${maxFileSize} bytes`);
@@ -291,23 +298,23 @@ app.post('/upload/init', async (req, res) => {
         }
         log.debug(`subdir=${subdir}`);
 
-        filePath = path.join(uploadDir, subdir, filename);
+        filePath = path.join(uploadDir, subdir, safeFilename);
     } else {
-        filePath = path.join(uploadDir, filename);
+        filePath = path.join(uploadDir, safeFilename);
     }
     log.debug(`filePath=${filePath}`);
     try {
         await ensureDirectoryExists(filePath);
 
         uploads.set(uploadId, {
-            filename,
+            safeFilename,
             filePath,
             fileSize,
             bytesReceived: 0,
             writeStream: fs.createWriteStream(filePath)
         });
 
-        log.info(`Initialized upload for ${filename} (${fileSize} bytes)`);
+        log.info(`Initialized upload for ${safeFilename} (${fileSize} bytes)`);
         res.json({ uploadId });
     } catch (err) {
         log.error(`Failed to initialize upload: ${err.message}`);
@@ -344,6 +351,9 @@ app.post('/upload/chunk/:uploadId', express.raw({
             upload.writeStream.end();
             uploads.delete(uploadId);
             log.success(`Upload completed: ${upload.filename}`);
+
+            // Add notification here
+            sendNotification(upload.filename);
         }
     } catch (err) {
         log.error(`Chunk upload failed: ${err.message}`);
@@ -378,6 +388,15 @@ app.listen(port, () => {
     log.info(`Server running at http://localhost:${port}`);
     log.info(`Upload directory: ${uploadDir}`);
 
+    // Add Apprise configuration logging
+    if (APPRISE_URL) {
+        log.info(`Apprise notifications enabled`);
+        log.info(`Apprise URL: ${APPRISE_URL}`);
+        log.info(`Apprise message template: ${APPRISE_MESSAGE}`);
+    } else {
+        log.info('Apprise notifications disabled - no URL configured');
+    }
+
     // List directory contents
     try {
         const files = fs.readdirSync(uploadDir);
@@ -389,3 +408,18 @@ app.listen(port, () => {
         log.error(`Failed to list directory contents: ${err.message}`);
     }
 });
+
+// Add this helper function after other helper functions
+async function sendNotification(filename) {
+    if (!APPRISE_URL) return;
+
+    try {
+        const message = APPRISE_MESSAGE.replace('{filename}', filename);
+
+        // Execute apprise command
+        await execAsync(`apprise "${APPRISE_URL}" -b "${message}"`);
+        log.info(`Notification sent for: ${filename}`);
+    } catch (err) {
+        log.error(`Failed to send notification: ${err.message}`);
+    }
+}
